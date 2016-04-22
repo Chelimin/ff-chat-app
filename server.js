@@ -15,17 +15,17 @@ function findConnection(id){
 server.listen(port, ()=>{
     console.log("Server listening on port: ", server.address().port);
 });
-              
+
 //serve static files with express
 app.use(express.static("./public"));
 
 //listen for a socket io connection event
 io.on("connection", (socket) => {
-  
+
   //new connection, save the socket to them
   connections.push({id: socket.id});
   console.log(`## New connection (${socket.id}). Total: ${connections.length}.`);
-  
+
   //listen for a disconnect event
   socket.once("disconnect", () => {
     //find the connection and remove  from the collection
@@ -42,7 +42,7 @@ io.on("connection", (socket) => {
     }
     socket.disconnect();
   });
-  
+
   //listen for a chat message from a socket and broadcast it
   socket.on("join", (user) => {
     //attach the new user to the connection object
@@ -53,17 +53,24 @@ io.on("connection", (socket) => {
     //broadcast their arrival to everyone else
     socket.broadcast.emit("joined", user);
     io.sockets.emit("online", connections);
-    
+
     console.log(`## ${connection.user.name} joined the chat on (${connection.id}).`);
   });
-  
+
   //broadcast chat message to other users
   socket.on("chat", (msg) => {
     let connection = findConnection(socket.id);
     //broadcast to other users
     socket.broadcast.emit("chat", { message: msg, user: connection.user});
-    
+
     console.log(`## ${connection.user.name} said: ${msg}`);
   });
-  
+
 });
+
+
+var mongoUri = process.env.MONGODB_URI || 'mongodb://localhost/chatapp';
+mongoose.connect(mongoUri);
+
+
+server.listen(process.env.PORT || 3000)
